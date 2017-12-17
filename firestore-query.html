@@ -1,0 +1,114 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="firestore-query">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+
+                padding: 10px;
+            }
+
+            .row {
+                flex: 1;
+                display: flex;
+                align-content: center;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+                padding: 3px;
+            }
+
+        </style>
+        <div>
+            <slot name="obj"></slot>
+        </div>
+
+    </template>
+
+    <script>
+      class FirestoreQuery extends Polymer.Element
+      {
+        static get is() { return 'firestore-query'; }
+
+        static get properties()
+        {
+
+          return {
+            type: {type: String, observer: 'onStuff'},
+            property: {type: String, observer: 'onStuff'},
+            operation: {type: String, observer: 'onStuff'},
+            value: {type: String, observer: 'onStuff'},
+            list: {type: Object, notify: true},
+            outquery: {type: Object, notify: true},
+            inquery: {type: Object, observer: 'onStuff'},
+          }
+
+        }
+
+        static get observers()
+        {
+          return [];
+        }
+
+        //------------------------------------------------------------------------------------------
+
+        onStuff()
+        {
+          console.log('firestore-query onStuff type ' + this.type + ' --> '+this.property+' '+this.operation+' '+this.value+' .. inquery = '+this.inquery)
+          if(this.type && this.property && this.operation && this.value)
+          {
+            let db   = window.db
+            let ref = this.inquery || db.collection(this.type)
+            if(this.value === 'true'){ this.value = true}
+            if(this.value === 'false'){ this.value = false}
+            let query = ref.where(this.property, this.operation, this.value)
+            this.set('outquery', query)
+            query.onSnapshot((res)=>
+            {
+              console.log('firestore-query snapshot update for ' + this.type + ' --> '+this.property+' '+this.operation+' '+this.value)
+              //console.dir(res)
+              let list = []
+              let count = res.docs.length
+              if(count === 0)
+              {
+                this.set('list', list)
+              }
+              res.docs.forEach((doc)=>
+              {
+                let d = doc.data()
+                d.id = doc.id
+                list.push(d)
+                if(--count === 0)
+                {
+                  //console.log('firestore-query list is now')
+                  //console.dir(list)
+                  this.set('list', list)
+                }
+              })
+            },(err)=>
+            {
+              console.log('firestore-query for type "'+this.type+'" property "'+this.property+'" '+this.operation+' value '+this.value+' ERROR:')
+              console.dir(err)
+            })
+          }
+        }
+
+      }
+
+      window.customElements.define(FirestoreQuery.is, FirestoreQuery);
+    </script>
+</dom-module>

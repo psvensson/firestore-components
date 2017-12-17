@@ -1,0 +1,105 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="firestore-list">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+
+                padding: 10px;
+            }
+
+            .row {
+                flex:1;
+                display: flex;
+                align-content: center;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+                padding: 3px;
+            }
+
+        </style>
+        <div>
+            <slot name="obj"></slot>
+        </div>
+
+    </template>
+
+    <script>
+      class FirestoreList extends Polymer.Element {
+        static get is() { return 'firestore-list'; }
+
+        static get properties()
+        {
+
+          return {
+            references: {type: Array, observer: 'onReferences'},
+            list: {type: Object, notify: true},
+            type:{type:String}
+          }
+
+        }
+
+        static get observers()
+        {
+          return [];
+        }
+
+        //------------------------------------------------------------------------------------------
+
+        onReferences(r)
+        {
+          //console.log('firestore-list onReferences')
+          //console.dir(r)
+          let db = window.db
+          let count = this.references.length
+          let rv = []
+          if(this.references.length === 0)
+          {
+            this.set('list', rv)
+          }
+          else
+          {
+            this.references.forEach((reference)=>
+            {
+              //console.log('-- firestore-list got reference')
+              //console.dir(reference)
+              db.doc(this.type+'/'+reference).get().then((obj)=>
+              {
+                let d = obj.data()
+                d.id = obj.id
+                rv.push(d)
+                if(--count === 0)
+                {
+                  console.log('-- firestore-list  all references added. rv is')
+                  console.dir(rv)
+                  this.set('list', rv)
+                }
+              },(err)=>
+              {
+                console.log('firestore-list ERROR: '+err)
+                console.dir(err)
+              })
+            })
+          }
+        }
+
+      }
+
+      window.customElements.define(FirestoreList.is, FirestoreList);
+    </script>
+</dom-module>

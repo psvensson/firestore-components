@@ -1,0 +1,108 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="firestore-all">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+
+                padding: 10px;
+            }
+
+            .row {
+                flex: 1;
+                display: flex;
+                align-content: center;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+                padding: 3px;
+            }
+
+        </style>
+        <div>
+            <slot name="obj"></slot>
+        </div>
+
+    </template>
+
+    <script>
+      class FirestoreAll extends Polymer.Element
+      {
+        static get is() { return 'firestore-all'; }
+
+        static get properties()
+        {
+
+          return {
+            type: {type: String, observer: 'onType'},
+            list: {type: Object, notify: true},
+          }
+
+        }
+
+        static get observers()
+        {
+          return [];
+        }
+
+        //------------------------------------------------------------------------------------------
+
+        onType(r)
+        {
+          console.log('firestore-all got type ' + this.type)
+          let db   = firebase.firestore();
+          let foo2 = db.collection(this.type)
+          //let query = foo2.orderBy('name')
+          //query.get().then((doc) =>
+          foo2.onSnapshot((doc)=>
+          {
+            console.log('+++++++++++++++++++++++++++++++++++++++++++++++++++ firestore-all got doc result from query')
+            console.dir(doc)
+            let count = doc.docs.length
+            let rv    = []
+            if(doc.docs.length === 0)
+            {
+              this.set('list', rv)
+            }
+            else
+            {
+              doc.docs.forEach((reference) =>
+              {
+                console.log('firestore-all getting reference ' + reference.path)
+                //console.dir(reference)
+
+                rv.push(reference.data())
+                if (--count === 0)
+                {
+                  console.log('firestore-all references added. rv is')
+                  console.dir(rv)
+                  this.set('list', rv)
+                }
+              })
+            }
+          },(err)=>
+          {
+            console.log('=== firestore-all ERROR: '+err)
+            console.dir(arguments)
+          })
+        }
+
+      }
+
+      window.customElements.define(FirestoreAll.is, FirestoreAll);
+    </script>
+</dom-module>

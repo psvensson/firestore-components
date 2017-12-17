@@ -1,0 +1,146 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="firestore-path">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+
+                padding: 10px;
+            }
+
+            .row {
+                flex:1;
+                display: flex;
+                align-content: center;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+                padding: 3px;
+            }
+
+        </style>
+        <div>
+            <slot name="obj"></slot>
+        </div>
+
+    </template>
+
+    <script>
+      class FirestorePath extends Polymer.Element {
+        static get is() { return 'firestore-path'; }
+
+        static get properties()
+        {
+
+          return {
+            doc: {type: Object, notify: true},
+            data: {type: Object, notify: true},
+            path: {type: String}
+          }
+
+        }
+
+        static get observers()
+        {
+          return ['onPath(path)'];
+        }
+
+        //------------------------------------------------------------------------------------------
+
+        onPath(p)
+        {
+          let db = window.db
+          try
+          {
+            db.doc(this.path)
+              .onSnapshot(function(doc)
+              {
+                if(doc.exists)
+                {
+                  console.log('firestore-path snapshot Update for  '+this.path+': ', doc && doc.data());
+                  //console.dir(doc)
+                  let d = doc.data()
+                  d.id = doc.id
+                  this.set('doc', doc)
+                  this.set('data', d)
+                }
+                else
+                {
+                  console.log('document '+this.path+' doesnt exist')
+                }
+              }.bind(this), function(err)
+              {
+                console.log('firestore-path onSnapShot  ERROR for doc path "'+this.path+'"')
+                console.dir(err)
+              }.bind(this));
+          }
+          catch(err)
+          {
+            console.log('ERROR in firestore-path for doc path "'+this.path+'"')
+            console.dir(err)
+          }
+
+        }
+
+        setDoc(_d)
+        {
+          console.log('firestore-path setDoc for '+this.path+' -> '+_d)
+          let d = _d || this.data
+          return new Promise(function(resolve, reject)
+          {
+            if(!d)
+            {
+              reject()
+            }
+            else
+            {
+
+              let db = window.db
+              console.log('setDoc called for path "'+this.path+'" -> '+d)
+              db.doc(this.path).set(d).then((res)=>
+              {
+                console.log('firestore-path setDoc result')
+                console.dir(res)
+                resolve(res)
+              }, (err)=>
+              {
+                console.log('firestore-path setDoc for path "'+this.path+'" ** ERROR **')
+                console.dir(err)
+                reject(err)
+              })
+            }
+
+          }.bind(this))
+        }
+
+        deleteDoc()
+        {
+          let db = window.db
+          db.doc(this.path).delete()
+        }
+
+        getDoc()
+        {
+          let db = window.db
+          return db.doc(this.path)
+        }
+
+      }
+
+      window.customElements.define(FirestorePath.is, FirestorePath);
+    </script>
+</dom-module>
