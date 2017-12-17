@@ -44,7 +44,7 @@ Will query you collection using the same logic as foudn in the doucmentation her
 
 ## firestore-subcollection
 
-<firestore-sunbcollection doc="{{mydoc}}" path="subthings" list={{listofsubthings}}"></firestore-sunbcollection>
+<firestore-subcollection doc="{{mydoc}}" path="subthings" list={{listofsubthings}}"></firestore-sunbcollection>
 
 Will do the same as firestore-all, but for a subcollections of documents under another docuiment. Here you can use the 'doc' property on firestore-path to provide input.
 
